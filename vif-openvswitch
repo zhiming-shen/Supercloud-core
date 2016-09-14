@@ -1,0 +1,85 @@
+#!/bin/bash
+#============================================================================
+# ${XEN_SCRIPT_DIR}/vif-openvswitch
+#
+# Script for configuring a vif using Open vSwitch.
+#
+# Usage:
+# vif-openvswitch (add|remove|online|offline)
+#
+# Environment vars:
+# vif         vif interface name (required).
+# XENBUS_PATH path to this device's details in the XenStore (required).
+#
+# Read from the store:
+# bridge  bridge to add the vif to (optional).  Defaults to searching for the
+#         bridge itself.
+#
+# up:
+# Enslaves the vif interface to the bridge.
+#
+# down:
+# Removes the vif interface from the bridge.
+#============================================================================
+
+dir=$(dirname "$0")
+. "$dir/vif-common.sh"
+
+bridge=${bridge:-}
+bridge=$(xenstore_read_default "$XENBUS_PATH/bridge" "$bridge")
+
+if [ -z "${bridge}" ]; then
+	bridge=$(ovs-vsctl list-br | head -n 1)
+	if [ -z "$bridge" ]; then
+		fatal "Could not find bridge, and none was specified"
+	fi
+fi
+
+tag=${tag:-}
+
+# Domain on VLAN tagged bridge?
+if ! ovs-vsctl br-exists ${bridge}; then
+	if [[ $bridge =~ \.[[:digit:]]{1,4}$ ]]; then
+		tag=${bridge##*.}
+		bridge=${bridge%.[0-9]*}
+	else
+		fatal "Could not find bridge device ${bridge}"
+	fi
+fi
+
+if ! ovs-vsctl br-exists ${bridge}; then
+	fatal "Could not find bridge device ${bridge}"
+fi
+
+case "$command" in
+  online|add)
+	ip link set dev "${vif}" up
+	ovs-vsctl --if-exists --with-iface del-port ${vif}
+	mtu="`ip link show $bridge | awk '/mtu/ { print $5 }'`"
+	if [ -n "$mtu" ] && [ "$mtu" -gt 0 ]
+	then
+		ip link set ${vif} mtu $mtu || :
+	fi
+	if [ -z $tag ]; then
+		ovs-vsctl -- --may-exist add-port ${bridge} ${vif}
+	else
+		ovs-vsctl -- --may-exist add-port ${bridge} ${vif} tag=${tag}
+	fi
+	;;
+  offline)
+	do_without_error ovs-vsctl -- --if-exists del-port ${bridge} ${vif}
+	do_without_error ip link set dev "${vif}" down
+	;;
+esac
+
+call_hooks vif post
+
+if [ -z "${tag}" ]; then
+	log debug "Successful vif-openvswitch $command for ${vif}, bridge ${bridge}."
+else
+	log debug "Successful vif-openvswitch $command for ${vif}, bridge ${bridge}, tag ${tag}."
+fi
+
+if [ "$command" == "online" ]; then
+	success
+fi

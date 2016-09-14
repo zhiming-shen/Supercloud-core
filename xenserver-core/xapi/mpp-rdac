@@ -1,0 +1,88 @@
+#!/usr/bin/env python
+# Copyright (c) Citrix Systems 2010.  All rights reserved.
+# Xen, the Xen logo, XenCenter, XenMotion are trademarks or registered
+# trademarks of Citrix Systems, Inc., in the United States and other
+# countries.
+
+import os
+import platform
+import sys
+
+from xcp.bootloader import *
+
+
+def usage():
+    print "Usage: %s --enable|--disable" % sys.argv[0]
+    sys.exit(1)
+
+def enable_mpp(uname):
+    # determine additional modules
+    extra = ['sg', 'mppUpper']
+    hba_modules = ['mptsas', 'mptfc', 'mptspi', 'megaraid_sas', 'qla2xxx', 'lpfc']
+    fh = open('/proc/modules')
+    for line in fh:
+        mod, rest = line.split(' ', 1)
+        if mod in hba_modules:
+            extra.append(mod)
+    fh.close()
+    extra_str = ' '.join(map(lambda x: "--with="+x, extra))
+
+    # generate initrd
+    if os.system("/sbin/mkinitrd --latch --with-mpp-rdac %s --theme=/usr/share/splash " % (extra_str)) != 0:
+        return 2
+    if os.system("/sbin/mkinitrd -f /boot/initrd-%s-mpp.img %s" % (uname, uname)) != 0:
+        return 2
+
+    # create new bootloader menu entry
+    b = Bootloader.loadExisting()
+    default_entry_name = b.default
+    if default_entry_name.endswith('-mpp'):
+        default_entry_name = b.default[:-4]
+    default_entry = b.menu[default_entry_name]
+    new_name = default_entry_name+'-mpp'
+    new_entry = MenuEntry(default_entry.hypervisor, default_entry.hypervisor_args,
+                          default_entry.kernel, default_entry.kernel_args + ' no-dm-multipath-root',
+                          '/boot/initrd-%s-mpp.img' % uname, default_entry.title + " (MPP RDAC)")
+    if new_name in b.menu_order:
+        b.remove(new_name)
+    b.append(new_name, new_entry)
+    b.default = new_name
+    b.commit()
+    
+    # update modprobe conf for iSCSI
+    fh = open("/etc/modprobe.d/mpp-rdac.conf", 'w')
+    fh.write("install iscsi_tcp /sbin/modprobe -q mppUpper ; /sbin/modprobe -i iscsi_tcp && /sbin/modprobe -q mppVhba\n")
+    fh.close()
+
+    return 0
+
+def disable_mpp(uname):
+    # change bootloader default
+    b = Bootloader.loadExisting()
+    if b.default.endswith('-mpp'):
+        new_default = b.default[:-4]
+        if new_default in b.menu_order:
+            b.remove(b.default)
+            b.default = new_default
+            b.commit()
+
+    # remove modprobe conf
+    try:
+        os.remove("/etc/modprobe.d/mpp-rdac.conf")
+    except:
+        pass
+
+    return 0
+
+if __name__ == '__main__':
+    ret = 0
+    uname = platform.release()
+    if len(sys.argv) != 2:
+        usage()
+    if sys.argv[1] == '--enable':
+        ret = enable_mpp(uname)
+    elif sys.argv[1] == '--disable':
+        ret = disable_mpp(uname)
+    else:
+        usage()
+    sys.exit(ret)

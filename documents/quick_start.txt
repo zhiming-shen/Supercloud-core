@@ -1,0 +1,30 @@
+This quick start only installs xen-blanket and basic network. For installing Xenserver and Openstack, you will need to run another set of scripts. We will update the document for that soon. 
+
+Right now we only support VMs running CentOS 6.X. The basic network uses UDP ports 655, 665, and 675. If you want to use gateway network, you also need to open UDP ports 1655, 1665, 1675.
+
+To make network setup automatic, you should checkout the supercloud source code in the same directory everywhere. You can use different temp directory (specified in config.sh) if you want.
+
+1. Setup a controller:
+    Download the code to the controller, modify config.sh. Make sure that IPSUFFIX=1.
+    
+    Then run setup_controller.sh.
+    
+2. Setup xen-blanket and basic network on other nodes:
+    Download the code to the VM, modify config.sh. Make sure that you are using unique IPSUFFIX for each node, and guest_mtu must be the same across the whole cluster (otherwise they will have trouble communicating with each other).
+    
+    "platform" in config.sh specifies what driver we are going to install. Make sure it is correct. 
+    
+    After modifying config.sh, run setup_xenblanket_1.sh first. Once it is done, modify /boot/grub/menu.lst according to the prompt. This is very error-prone, and if you make any mistake, you loss the VM instance! So do not point default entry in grub to xen-blanket unless you have tested it. To test whether xen-blanket really works, use our test_reboot.sh script as following:
+    
+    ./test_reboot.sh <grub_entry>
+    
+    For example, if your xen-blanket entry is 4 (counting starts from 0), you can just run "./test_reboot.sh 4". The system will reboot using xen-blanket. If anything is wrong, reboot the VM and it will use the original default entry in grub.
+    
+    Once xen-blanket works, run setup_xenblanket_2.sh.
+    
+3. Connect all nodes into the basic network:
+    Propagate the controller's public key to all nodes, so that it can login to every node with the root account. Some nodes might disable root access. You should enable it if you want to use the following scripts.
+    
+    On controller, modify network.conf. Follow the comment and examples there.
+    
+    Then on controller, run "python build_network.py". It will login to each node and setup the tunnels. Once it is done, every node should be able to talk to each other using the internal IP addresses (10.8.1/8/9.IPSUFFIX).

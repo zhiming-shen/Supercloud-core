@@ -1,0 +1,400 @@
+From 95584d450cdadf7946db55efa35402fabcd37d13 Mon Sep 17 00:00:00 2001
+From: root <root@master-100.(none)>
+Date: Mon, 13 Jun 2016 23:23:35 -0400
+Subject: patch
+
+---
+ local.conf                                   |  132 ++++++++++++++++++++++++++
+ tools/xen/build_xva.sh                       |   21 ++++-
+ tools/xen/devstackubuntupreseed.cfg          |    2 +-
+ tools/xen/install_os_domU.sh                 |   12 +-
+ tools/xen/prepare_guest.sh                   |   25 +++++-
+ tools/xen/scripts/install_ubuntu_template.sh |    1 +
+ tools/xen/xenrc                              |   25 +++---
+ 7 files changed, 192 insertions(+), 26 deletions(-)
+ create mode 100644 local.conf
+
+diff --git a/local.conf b/local.conf
+new file mode 100644
+index 0000000..d53b57b
+--- /dev/null
++++ b/local.conf
+@@ -0,0 +1,132 @@
++# Sample ``local.conf`` for user-configurable variables in ``stack.sh``
++
++# NOTE: Copy this file to the root DevStack directory for it to work properly.
++
++# ``local.conf`` is a user-maintained settings file that is sourced from ``stackrc``.
++# This gives it the ability to override any variables set in ``stackrc``.
++# Also, most of the settings in ``stack.sh`` are written to only be set if no
++# value has already been set; this lets ``local.conf`` effectively override the
++# default values.
++
++# This is a collection of some of the settings we have found to be useful
++# in our DevStack development environments. Additional settings are described
++# in http://devstack.org/local.conf.html
++# These should be considered as samples and are unsupported DevStack code.
++
++# The ``localrc`` section replaces the old ``localrc`` configuration file.
++# Note that if ``localrc`` is present it will be used in favor of this section.
++[[local|localrc]]
++
++
++GIT_BASE="http://github.com"
++
++# Minimal Contents
++# ----------------
++
++# While ``stack.sh`` is happy to run without ``localrc``, devlife is better when
++# there are a few minimal variables set:
++
++# If the ``*_PASSWORD`` variables are not set here you will be prompted to enter
++# values for them by ``stack.sh``and they will be added to ``local.conf``.
++ADMIN_PASSWORD=OPENSTACK_PASSWD
++DATABASE_PASSWORD=OPENSTACK_PASSWD
++RABBIT_PASSWORD=OPENSTACK_PASSWD
++SERVICE_PASSWORD=OPENSTACK_PASSWD
++
++# ``HOST_IP`` and ``HOST_IPV6`` should be set manually for best results if
++# the NIC configuration of the host is unusual, i.e. ``eth1`` has the default
++# route but ``eth0`` is the public interface.  They are auto-detected in
++# ``stack.sh`` but often is indeterminate on later runs due to the IP moving
++# from an Ethernet interface to a bridge on the host. Setting it here also
++# makes it available for ``openrc`` to include when setting ``OS_AUTH_URL``.
++# Neither is set by default.
++#HOST_IP=w.x.y.z
++#HOST_IPV6=2001:db8::7
++
++
++# Logging
++# -------
++
++# By default ``stack.sh`` output only goes to the terminal where it runs.  It can
++# be configured to additionally log to a file by setting ``LOGFILE`` to the full
++# path of the destination log file.  A timestamp will be appended to the given name.
++LOGFILE=$DEST/logs/stack.sh.log
++
++# Old log files are automatically removed after 7 days to keep things neat.  Change
++# the number of days by setting ``LOGDAYS``.
++LOGDAYS=2
++
++# Nova logs will be colorized if ``SYSLOG`` is not set; turn this off by setting
++# ``LOG_COLOR`` false.
++#LOG_COLOR=False
++
++
++# Using milestone-proposed branches
++# ---------------------------------
++
++# Uncomment these to grab the milestone-proposed branches from the
++# repos:
++#CINDER_BRANCH=milestone-proposed
++#GLANCE_BRANCH=milestone-proposed
++#HORIZON_BRANCH=milestone-proposed
++#KEYSTONE_BRANCH=milestone-proposed
++#KEYSTONECLIENT_BRANCH=milestone-proposed
++#NOVA_BRANCH=milestone-proposed
++#NOVACLIENT_BRANCH=milestone-proposed
++#NEUTRON_BRANCH=milestone-proposed
++#SWIFT_BRANCH=milestone-proposed
++
++# Using git versions of clients
++# -----------------------------
++# By default clients are installed from pip.  See LIBS_FROM_GIT in
++# stackrc for details on getting clients from specific branches or
++# revisions.  e.g.
++# LIBS_FROM_GIT="python-ironicclient"
++# IRONICCLIENT_BRANCH=refs/changes/44/2.../1
++
++# Swift
++# -----
++
++# Swift is now used as the back-end for the S3-like object store. Setting the
++# hash value is required and you will be prompted for it if Swift is enabled
++# so just set it to something already:
++SWIFT_HASH=66a3d6b56c1f479c8b4e70ab5c2000f5
++
++# For development purposes the default of 3 replicas is usually not required.
++# Set this to 1 to save some resources:
++SWIFT_REPLICAS=1
++
++# The data for Swift is stored by default in (``$DEST/data/swift``),
++# or (``$DATA_DIR/swift``) if ``DATA_DIR`` has been set, and can be
++# moved by setting ``SWIFT_DATA_DIR``. The directory will be created
++# if it does not exist.
++SWIFT_DATA_DIR=$DEST/data
++
++GUEST_PASSWORD=GUEST_PASSWD
++XENAPI_PASSWORD=HOST_PASSWD
++XENAPI_CONNECTION_URL="http://10.8.1.100"
++VNCSERVER_PROXYCLIENT_ADDRESS=10.8.1.100
++VIRT_DRIVER=xenserver
++MULTI_HOST=1
++ACTIVE_TIMEOUT=60
++
++#FLAT_INTERFACE=eth1
++FLAT_NETWORK_BRIDGE="brvif1.5"
++FIXED_RANGE=10.8.8.0/26
++FIXED_NETWORK_SIZE=64
++FLOATING_RANGE=10.8.9.0/26
++
++SCREEN_LOGDIR=$DEST/logs/screen
++LOGFILE=$DEST/logs/stack.sh.log
++
++#=====================================================
++##Uncomment the following lines if installing a compute node
++#DATABASE_TYPE=mysql
++#SERVICE_HOST=10.8.1.150
++#MYSQL_HOST=10.8.1.150
++#RABBIT_HOST=10.8.1.150
++#GLANCE_HOSTPORT=10.8.1.150:9292
++#ENABLED_SERVICES=n-cpu,n-net,n-api-meta,c-vol
++#NOVA_VNC_ENABLED=True
++#NOVNCPROXY_URL="http://$SERVICE_HOST:6080/vnc_auto.html"
++#VNCSERVER_LISTEN=$HOST_IP
+diff --git a/tools/xen/build_xva.sh b/tools/xen/build_xva.sh
+index 25bf58c..3371119 100755
+--- a/tools/xen/build_xva.sh
++++ b/tools/xen/build_xva.sh
+@@ -51,10 +51,18 @@ function _print_interface_config {
+     echo "auto $device"
+     if [ $ip_address == "dhcp" ]; then
+         echo "iface $device inet dhcp"
++    elif [ $device_nr == $MGT_DEV_NR ]; then
++        echo "iface $device inet static"
++        echo "  address $ip_address"
++        echo "  netmask $netmask"
++        echo "  gateway GATEWAY"
++        echo "  dns-nameservers 128.253.180.2"
++        echo "  mtu 1400"
+     else
+         echo "iface $device inet static"
+         echo "  address $ip_address"
+         echo "  netmask $netmask"
++        echo "  mtu 1400"
+     fi
+ 
+     # Turn off tx checksumming for better performance
+@@ -83,10 +91,10 @@ if [ ! -d $STAGING_DIR/etc ]; then
+ fi
+ 
+ # Only support DHCP for now - don't support how different versions of Ubuntu handle resolv.conf
+-if [ "$MGT_IP" != "dhcp" ] && [ "$PUB_IP" != "dhcp" ]; then
+-    echo "Configuration without DHCP not supported"
+-    exit 1
+-fi
++#if [ "$MGT_IP" != "dhcp" ] && [ "$PUB_IP" != "dhcp" ]; then
++#    echo "Configuration without DHCP not supported"
++#    exit 1
++#fi
+ 
+ # Copy over devstack
+ rm -f /tmp/devstack.tar
+@@ -191,3 +199,8 @@ set -eux
+ ) 9> /opt/stack/.runsh_lock
+ EOF
+ chmod 755 $STAGING_DIR/opt/stack/run.sh
++
++#============================
++
++#/bin/cp -f $STAGING_DIR/root/.profile $STAGING_DIR/opt/stack/
++
+diff --git a/tools/xen/devstackubuntupreseed.cfg b/tools/xen/devstackubuntupreseed.cfg
+index 80f334b..6ffd21f 100644
+--- a/tools/xen/devstackubuntupreseed.cfg
++++ b/tools/xen/devstackubuntupreseed.cfg
+@@ -468,4 +468,4 @@ xserver-xorg xserver-xorg/config/monitor/mode-list \
+ # still a usable /target directory. You can chroot to /target and use it
+ # directly, or use the apt-install and in-target commands to easily install
+ # packages and run commands in the target system.
+-d-i preseed/late_command string
++#d-i preseed/late_command string
+diff --git a/tools/xen/install_os_domU.sh b/tools/xen/install_os_domU.sh
+index 3a61215..62ec94b 100755
+--- a/tools/xen/install_os_domU.sh
++++ b/tools/xen/install_os_domU.sh
+@@ -351,16 +351,15 @@ else
+ fi
+ 
+ # Create an ssh-keypair, and set it up for dom0 user
+-rm -f /root/dom0key /root/dom0key.pub
+-ssh-keygen -f /root/dom0key -P "" -C "dom0"
++#rm -f /root/dom0key /root/dom0key.pub
++#ssh-keygen -f /root/dom0key -P "" -C "dom0"
+ DOMID=$(get_domid "$GUEST_NAME")
+ 
+-xenstore-write /local/domain/$DOMID/authorized_keys/$DOMZERO_USER "$(cat /root/dom0key.pub)"
+-xenstore-chmod -u /local/domain/$DOMID/authorized_keys/$DOMZERO_USER r$DOMID
++#xenstore-write /local/domain/$DOMID/authorized_keys/$DOMZERO_USER "$(cat /root/dom0key.pub)"
++#xenstore-chmod -u /local/domain/$DOMID/authorized_keys/$DOMZERO_USER r$DOMID
+ 
+ function run_on_appliance {
+     ssh \
+-        -i /root/dom0key \
+         -o UserKnownHostsFile=/dev/null \
+         -o StrictHostKeyChecking=no \
+         -o BatchMode=yes \
+@@ -384,7 +383,8 @@ run_on_appliance cat /home/$DOMZERO_USER/.ssh/id_rsa.pub >> /root/.ssh/authorize
+ # If we have copied our ssh credentials, use ssh to monitor while the installation runs
+ WAIT_TILL_LAUNCH=${WAIT_TILL_LAUNCH:-1}
+ COPYENV=${COPYENV:-1}
+-if [ "$WAIT_TILL_LAUNCH" = "1" ]  && [ -e ~/.ssh/id_rsa.pub  ] && [ "$COPYENV" = "1" ]; then
++#if [ "$WAIT_TILL_LAUNCH" = "1" ]  && [ -e ~/.ssh/id_rsa.pub  ] && [ "$COPYENV" = "1" ]; then
++if false; then
+     set +x
+ 
+     echo "VM Launched - Waiting for run.sh"
+diff --git a/tools/xen/prepare_guest.sh b/tools/xen/prepare_guest.sh
+index 6de1afc..b6e48f1 100755
+--- a/tools/xen/prepare_guest.sh
++++ b/tools/xen/prepare_guest.sh
+@@ -61,11 +61,12 @@ EOF
+     touch /home/$username/.ssh/authorized_keys
+     chown $username:$username /home/$username/.ssh/authorized_keys
+     chmod 0600 /home/$username/.ssh/authorized_keys
++    echo "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA2e7W2aCIC4DXyA3buZb32QnsVl45PCFmwESfCBkD8rubtF7ySCZ7V7r3tyMaYuFVpnzp5QjZnlKvUuOhrm1UWDBh+QbsU5pMNTPdv0HCd/4fyNYzh39CQfCCSThhbDCwjl7WKhaZXkSft2DLcegjGx7f+R1GUSYO0ZH0iuRwi56ZHuqTjBnsoNER6LRArkN/AoCTDWPJJLtaKyRZUpnSt5l7fReHhPhN/S8nQ6snkrgN6lirC1NFTYPmtm4AerTjFc4dH4pY96Gc1GK1IJwpca9FSC/KVkqx9XynOOhtt2Ek4PKUZiL1R2Oj3+pSz/BpVmu2aZJUhb7KEpAigpWSMQ== root@xenserver243" >> /home/$username/.ssh/authorized_keys
+ 
+     # Setup the key updater as a cron job
+-    crontab -u $username - << EOF
+-* * * * * $key_updater_script
+-EOF
++#    crontab -u $username - << EOF
++#* * * * * $key_updater_script
++#EOF
+ 
+ }
+ 
+@@ -94,6 +95,24 @@ cat > /etc/udev/rules.d/50-openstack-blockdev.rules << EOF
+ KERNEL=="xvd[b-z]", GROUP="$STACK_USER", MODE="0660"
+ EOF
+ 
++########################################
++#supercloud customization
++/bin/cp -rf /etc/skel/. /opt/stack/
++
++#cat > /etc/logrotate.d/devstack << EOF
++#/opt/stack/logs/*201*.log {
++#    daily
++#    rotate 7
++#    compress
++#    delaycompress
++#    missingok
++#    notifempty
++#    create 644 stack stack
++#}
++#EOF
++########################################
++
++
+ # Give ownership of /opt/stack to stack user
+ chown -R $STACK_USER /opt/stack
+ 
+diff --git a/tools/xen/scripts/install_ubuntu_template.sh b/tools/xen/scripts/install_ubuntu_template.sh
+index d80ed09..1ed67e9 100755
+--- a/tools/xen/scripts/install_ubuntu_template.sh
++++ b/tools/xen/scripts/install_ubuntu_template.sh
+@@ -63,6 +63,7 @@ netcfg/get_nameservers=${UBUNTU_INST_NAMESERVERS} \
+ netcfg/get_ipaddress=${UBUNTU_INST_IP} \
+ netcfg/get_netmask=${UBUNTU_INST_NETMASK} \
+ netcfg/get_gateway=${UBUNTU_INST_GATEWAY} \
++netcfg/get_mtu=${UBUNTU_INST_MTU} \
+ netcfg/confirm_static=true"
+     pvargs="${pvargs} ${netcfgargs}"
+ fi
+diff --git a/tools/xen/xenrc b/tools/xen/xenrc
+index bb27454..694b992 100644
+--- a/tools/xen/xenrc
++++ b/tools/xen/xenrc
+@@ -6,7 +6,7 @@
+ #
+ 
+ # Name of this guest
+-GUEST_NAME=${GUEST_NAME:-DevStackOSDomU}
++GUEST_NAME=${GUEST_NAME:-DevStack-master}
+ 
+ # Template cleanup
+ CLEAN_TEMPLATES=${CLEAN_TEMPLATES:-false}
+@@ -20,15 +20,15 @@ VDI_MB=${VDI_MB:-5000}
+ #
+ # Set to 6GB so an 8GB XenServer VM can have a 1GB Dom0 and leave 1GB for VMs
+ OSDOMU_MEM_MB=6144
+-OSDOMU_VDI_GB=8
++OSDOMU_VDI_GB=15
+ 
+ # Network mapping. Specify bridge names or network names. Network names may
+ # differ across localised versions of XenServer. If a given bridge/network
+ # was not found, a new network will be created with the specified name.
+ 
+ # Get the management network from the XS installation
+-VM_BRIDGE_OR_NET_NAME="OpenStack VM Network"
+-PUB_BRIDGE_OR_NET_NAME="OpenStack Public Network"
++VM_BRIDGE_OR_NET_NAME="brvif1.5"
++PUB_BRIDGE_OR_NET_NAME="brvif1.6"
+ XEN_INT_BRIDGE_OR_NET_NAME="OpenStack VM Integration Network"
+ 
+ # VM Password
+@@ -50,16 +50,16 @@ HOST_IP_IFACE=${HOST_IP_IFACE:-"eth${MGT_DEV_NR}"}
+ #
+ 
+ # Management network
+-MGT_IP=${MGT_IP:-dhcp}
+-MGT_NETMASK=${MGT_NETMASK:-ignored}
++MGT_IP=${MGT_IP:-10.8.1.150}
++MGT_NETMASK=${MGT_NETMASK:-255.255.255.0}
+ 
+ # VM Network
+-VM_IP=${VM_IP:-10.255.255.255}
++VM_IP=${VM_IP:-10.8.8.150}
+ VM_NETMASK=${VM_NETMASK:-255.255.255.0}
+ 
+ # Public network
+ # Aligned with stack.sh - see FLOATING_RANGE
+-PUB_IP=${PUB_IP:-172.24.4.10}
++PUB_IP=${PUB_IP:-10.8.9.150}
+ PUB_NETMASK=${PUB_NETMASK:-255.255.255.0}
+ 
+ # Ubuntu install settings
+@@ -76,10 +76,11 @@ UBUNTU_INST_HTTP_PROXY=""
+ UBUNTU_INST_LOCALE="en_US"
+ UBUNTU_INST_KEYBOARD="us"
+ # network configuration for ubuntu netinstall
+-UBUNTU_INST_IP="dhcp"
+-UBUNTU_INST_NAMESERVERS=""
+-UBUNTU_INST_NETMASK=""
+-UBUNTU_INST_GATEWAY=""
++UBUNTU_INST_IP="10.8.1.150"
++UBUNTU_INST_NAMESERVERS="128.253.180.2"
++UBUNTU_INST_NETMASK="255.255.255.0"
++UBUNTU_INST_GATEWAY="GATEWAY"
++UBUNTU_INST_MTU="GUEST_MTU"
+ 
+ # Create a separate xvdb. Tis could be used as a backing device for cinder
+ # volumes. Specify
+-- 
+1.7.1
+
+
+From ae29f72c2112eef912ce2d6ae06809684701b033 Mon Sep 17 00:00:00 2001
+From: root <root@master-100.(none)>
+Date: Mon, 13 Jun 2016 23:38:32 -0400
+Subject: patch
+
+---
+ tools/xen/install_os_domU.sh |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/tools/xen/install_os_domU.sh b/tools/xen/install_os_domU.sh
+index 62ec94b..98cbd4a 100755
+--- a/tools/xen/install_os_domU.sh
++++ b/tools/xen/install_os_domU.sh
+@@ -207,7 +207,6 @@ if [ -z "$templateuuid" ]; then
+             -e "s,\(d-i mirror/http/proxy string\).*,\1 $UBUNTU_INST_HTTP_PROXY,g" \
+             -e "s,\(d-i passwd/root-password password\).*,\1 $GUEST_PASSWORD,g" \
+             -e "s,\(d-i passwd/root-password-again password\).*,\1 $GUEST_PASSWORD,g" \
+-            -e "s,\(d-i preseed/late_command string\).*,\1 in-target mkdir -p /tmp; in-target wget --no-proxy ${HOST_IP}/latecommand.sh -O /root/latecommand.sh; in-target bash /root/latecommand.sh,g" \
+             -i "${HTTP_SERVER_LOCATION}/devstackubuntupreseed.cfg"
+ 
+         sed \
+-- 
+1.7.1
+

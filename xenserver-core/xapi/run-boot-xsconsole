@@ -1,0 +1,3 @@
+#!/bin/bash
+TTY=$1
+exec /sbin/mingetty --noissue --autologin root --loginprog=/usr/bin/xsconsole $TTY
