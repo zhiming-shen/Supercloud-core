@@ -37,12 +37,12 @@ GUEST_NAME=$(hostname)
 GUEST_IPSUFFIX=$((IPSUFFIX+50))
 
 #root password of Domain-0
-host_passwd=qzpm123098
+host_passwd=<modify_me>
 
 #password of the openstack VM
-guest_passwd=qzpm123098
+guest_passwd=<modify_me>
 
 #password of the openstack services
-openstack_passwd=qzpm123098
+openstack_passwd=<modify_me>
 
 GIT_OPENSTACK="https://git.openstack.org/openstack-dev/devstack"
