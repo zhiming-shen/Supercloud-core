@@ -59,6 +59,9 @@ git clone --depth=1 $GIT_OPENSTACK
 cd devstack
 git apply $BASE/supercloud.patch
 
+dom0_key=$(cat /root/.ssh/id_rsa.pub)
+sed -c -i "s:ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA2e7W2aCIC4DXyA3buZb32QnsVl45PCFmwESfCBkD8rubtF7ySCZ7V7r3tyMaYuFVpnzp5QjZnlKvUuOhrm1UWDBh+QbsU5pMNTPdv0HCd/4fyNYzh39CQfCCSThhbDCwjl7WKhaZXkSft2DLcegjGx7f+R1GUSYO0ZH0iuRwi56ZHuqTjBnsoNER6LRArkN/AoCTDWPJJLtaKyRZUpnSt5l7fReHhPhN/S8nQ6snkrgN6lirC1NFTYPmtm4AerTjFc4dH4pY96Gc1GK1IJwpca9FSC/KVkqx9XynOOhtt2Ek4PKUZiL1R2Oj3+pSz/BpVmu2aZJUhb7KEpAigpWSMQ== root@xenserver243:$dom0_key:" tools/xen/prepare_guest.sh
+
 sed -c -i "s/10.8.1.100/10.8.1.$IPSUFFIX/" local.conf
 sed -c -i "s/OPENSTACK_PASSWD/$openstack_passwd/" local.conf
 sed -c -i "s/GUEST_PASSWD/$guest_passwd/" local.conf
