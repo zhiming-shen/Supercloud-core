@@ -1,4 +1,4 @@
-This quick start only installs xen-blanket and basic network. For installing Xenserver and Openstack, checkout "openstack.txt". 
+This document is for installing XenServer, OpenStack, Xen-Blanket, and basic network. If you just need Xen-Blanket and basic network, refer to "quick_start.txt".
 
 Right now we only support VMs running CentOS 6.X. The basic network uses UDP ports 655, 665, and 675. If you want to use gateway network, you also need to open UDP ports 1655, 1665, 1675.
 
@@ -12,20 +12,25 @@ the installation scripts in a screen or tmux session.
     
     Then run setup_controller.sh.
     
-2. Setup xen-blanket and basic network on other nodes:
-    Download the code to the VM, modify config.sh. Make sure that you are using unique IPSUFFIX for each node, and guest_mtu must be the same across the whole cluster (otherwise they will have trouble communicating with each other).
+2. Setup the master:
+    The master node requires 8GB memory.
+    
+    Download the code to the VM, modify config.sh. Make sure that IPSUFFIX=100.
     
     "platform" in config.sh specifies what driver we are going to install. Make sure it is correct. 
     
-    After modifying config.sh, run setup_xenblanket_1.sh first. Once it is done, modify /boot/grub/menu.lst according to the prompt. This is very error-prone, and if you make any mistake, you loss the VM instance! So do not point default entry in grub to xen-blanket unless you have tested it. To test whether xen-blanket really works, use our test_reboot.sh script as following:
+    After modifying config.sh, run setup_xenserver_1.sh first. Once it is done, reboot. 
     
-    ./test_reboot.sh <grub_entry>
+    Then, run setup_xenserver_2.sh. It should reboot automatically.
     
-    For example, if your xen-blanket entry is 4 (counting starts from 0), you can just run "./test_reboot.sh 4". The system will reboot using xen-blanket. If anything is wrong, reboot the VM and it will use the original default entry in grub.
+    Then, run setup_openstack.sh utile it finishes.
     
-    Once xen-blanket works, run setup_xenblanket_2.sh.
+    Follow the prompt of previous script and run "install_os_domU.sh". It will install openstack into a VM.
     
-3. Connect all nodes into the basic network:
+3. Setup compute nodes:
+    Similar steps as the master, but make sure that IPSUFFIX is unique.
+    
+4. Connect all nodes into the basic network:
     Propagate the controller's public key to all nodes, so that it can login to every node with the root account. Some nodes might disable root access. You should enable it if you want to use the following scripts.
     
     On controller, modify network.conf. Follow the comment and examples there.
