@@ -35,7 +35,10 @@ xe pif-scan host-uuid=$(xe host-list minimal=true)
 sleep 15
 xe vm-shutdown uuid=$(xe vm-list name-label=dummy --minimal) force=true
 
+set +x
+echo "Waiting for the database to be flushed. It could take a while..."
 while ! grep -q fe:ff:ff:ff:ff:ff /var/lib/xcp/state.db; do sleep 1; done
+set -x
 
 /bin/cp -f /var/lib/xcp/state.db /var/lib/xcp/state.db.bak
 /bin/cp -f /etc/rc.d/rc3.d/S05cgconfig /root/S05cgconfig.bak

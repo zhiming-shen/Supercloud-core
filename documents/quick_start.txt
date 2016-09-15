@@ -4,6 +4,9 @@ Right now we only support VMs running CentOS 6.X. The basic network uses UDP por
 
 To make network setup automatic, you should checkout the supercloud source code in the same directory everywhere. You can use different temp directory (specified in config.sh) if you want.
 
+The installation might take a long time to finish. Make sure you are running
+the installation scripts in a screen or tmux session.
+
 1. Setup a controller:
     Download the code to the controller, modify config.sh. Make sure that IPSUFFIX=1.
     

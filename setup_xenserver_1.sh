@@ -18,7 +18,11 @@ sudo rpm -Uvh remi-release-6*.rpm epel-release-6*.rpm
 set -e
 
 yum groupinstall -y "Development Tools"
-yum install transfig wget texi2html libaio-devel dev86 glibc-devel e2fsprogs-devel gitk mkinitrd iasl xz-devel bzip2-devel pciutils-libs pciutils-devel SDL-devel libX11-devel gtk2-devel bridge-utils PyXML qemu-common qemu-img mercurial libuuid-devel uuid uuid-devel openssl openssl-devel ncurses-devel ncurses python-devel texinfo yajl-devel ipxe-roms seabios glibc-devel.i686 ipxe-roms-qemu libtool libtool-ltdl-devel createrepo ipxe-roms-qemu -y
+yum install transfig wget texi2html libaio-devel dev86 glibc-devel e2fsprogs-devel gitk mkinitrd iasl xz-devel bzip2-devel pciutils-libs pciutils-devel SDL-devel libX11-devel gtk2-devel bridge-utils PyXML qemu-common qemu-img mercurial libuuid-devel uuid uuid-devel openssl openssl-devel ncurses-devel ncurses python-devel texinfo yajl-devel ipxe-roms seabios glibc-devel.i686 ipxe-roms-qemu libtool libtool-ltdl-devel createrepo -y 
+
+wget -P $TEMP/ $WEBSITE/ipxe-roms-qemu-20120328-3.gitaac9718.el6.centos.alt.noarch.rpm
+
+rpm -ivh $TEMP/ipxe-roms-qemu-20120328-3.gitaac9718.el6.centos.alt.noarch.rpm
 
 sed -c -i "s/\(HOSTNAME *= *\).*/\1$HOSTNAME/" /etc/sysconfig/network
 sed -c -i "/^127.0.0.1/ s/$/ $HOSTNAME/" /etc/hosts 
@@ -64,7 +68,8 @@ sed -c -i "s/qopts += 'b'/#qopts += 'b'/" /usr/lib/xapi/sm/FileSR.py
 
 sed -c -i "s:/opt/xensource/sm/:/usr/lib/xapi/sm/:" /usr/lib/xapi/plugins/nfs-on-slave
 
-xenserver-install-wizard
+/bin/cp -f $BASE/xenserver-core/network.py /usr/share/xenserver-install-wizard
+xenserver-install-wizard --yes-to-all
 
 xe pif-scan host-uuid=$(xe host-list minimal=true)
 
@@ -177,6 +182,14 @@ elif [ "$platform" = hyperv ]; then
     sed -c -i 's/vmlinuz-3.6.11-2.el6.centos.alt.x86_64/vmlinuz-3.4.46-blanket/' /boot/grub/menu.lst
     sed -c -i 's/initramfs-3.6.11-2.el6.centos.alt.x86_64.img/initramfs-3.4.46-blanket.img/' /boot/grub/menu.lst
 fi
-grubby --set-default=/boot/xen-4.2.2-blanket.gz
-echo "All completed. Now check grub and rc.local, and then reboot. If your eth0 IP is in the range of 192.168.122.x, remember to do virsh net-edit default."
 
+cp $BASE/vif-openvswitch /etc/xen/scripts
+sed -c -i "s/vif-bridge/vif-openvswitch/" /etc/xen/xl.conf
+sed -c -i "s/#vifscript/vifscript/" /etc/xen/xl.conf
+
+yum install nfs-utils -y
+
+#grubby --set-default=/boot/xen-4.2.2-blanket.gz
+set +x
+echo "All completed. Now check grub and rc.local, and then reboot. If your eth0 IP is in the range of 192.168.122.x, remember to do virsh net-edit default."
+echo "Also note that in grub, the console of the kernel should be pointed to \"console=hvc0 earlyprintk=xen\", instead of ttyS0."
