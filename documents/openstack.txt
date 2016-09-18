@@ -1,6 +1,8 @@
 This document is for installing XenServer, OpenStack, Xen-Blanket, and basic network. If you just need Xen-Blanket and basic network, refer to "quick_start.txt".
 
-Right now we only support VMs running CentOS 6.X. The basic network uses UDP ports 655, 665, and 675. If you want to use gateway network, you also need to open UDP ports 1655, 1665, 1675.
+Right now we only support first-layer VMs running CentOS 6.X (as Domain-0). But once Xen-Blanket is working, you can run pretty much any version of Linux in the second-layer VM (as Domain-U) as long as it has a Xen-enabled kernel.
+
+The basic network uses UDP ports 655, 665, and 675. If you want to use gateway network, you also need to open UDP ports 1655, 1665, 1675.
 
 To make network setup automatic, you should checkout the supercloud source code in the same directory everywhere. You can use different temp directory (specified in config.sh) if you want. "guest_mtu" must be the same across the whole cluster (otherwise they will have trouble communicating with each other).
 
