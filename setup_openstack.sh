@@ -55,9 +55,13 @@ fi
 echo -e "$host_passwd\n$host_passwd" | (passwd --stdin root)
 
 cd $TEMP
-git clone --depth=1 $GIT_OPENSTACK
-cd devstack
-git apply $BASE/supercloud.patch
+#git clone --depth=1 $GIT_OPENSTACK
+#cd devstack
+#git apply $BASE/supercloud.patch
+wget http://supercloud.cs.cornell.edu/downloads/devstack-stable-newton.zip
+unzip devstack-stable-newton.zip
+cd devstack-stable-newton
+patch -p1 <$BASE/supercloud.patch
 
 dom0_key=$(cat /root/.ssh/id_rsa.pub)
 sed -c -i "s:ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA2e7W2aCIC4DXyA3buZb32QnsVl45PCFmwESfCBkD8rubtF7ySCZ7V7r3tyMaYuFVpnzp5QjZnlKvUuOhrm1UWDBh+QbsU5pMNTPdv0HCd/4fyNYzh39CQfCCSThhbDCwjl7WKhaZXkSft2DLcegjGx7f+R1GUSYO0ZH0iuRwi56ZHuqTjBnsoNER6LRArkN/AoCTDWPJJLtaKyRZUpnSt5l7fReHhPhN/S8nQ6snkrgN6lirC1NFTYPmtm4AerTjFc4dH4pY96Gc1GK1IJwpca9FSC/KVkqx9XynOOhtt2Ek4PKUZiL1R2Oj3+pSz/BpVmu2aZJUhb7KEpAigpWSMQ== root@xenserver243:$dom0_key:" tools/xen/prepare_guest.sh
@@ -101,5 +105,5 @@ sed -c -i "s/mtu 1400/mtu $guest_mtu/" tools/xen/build_xva.sh
 #./install_os_domU.sh
 #cp -np plugins/* /usr/lib/xapi/plugins/
 set +x
-echo "Check default gateway, mtu and nameserver in xenrc and build_xva.sh. You may want to adjust the disk size of the VM. Then run cd $TEMP/devstack/tools/xen/; ./install_os_domU.sh"
+echo "Check default gateway, mtu and nameserver in xenrc and build_xva.sh. You may want to adjust the disk size of the VM. Then run cd $TEMP/devstack-stable-newton/tools/xen/; ./install_os_domU.sh"
 echo "Stage 3 finished."
