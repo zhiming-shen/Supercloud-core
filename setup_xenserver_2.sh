@@ -41,14 +41,15 @@ while ! grep -q fe:ff:ff:ff:ff:ff /var/lib/xcp/state.db; do sleep 1; done
 set -x
 
 /bin/cp -f /var/lib/xcp/state.db /var/lib/xcp/state.db.bak
+
+
 #/bin/cp -f /etc/rc.d/rc3.d/S05cgconfig /root/S05cgconfig.bak
-/bin/cp -f /etc/rc.d/init.d/cgconfig /root/cgconfig.bak
+/bin/cp -f /etc/rc.d/init.d/openvswitch /root/openvswitch.bak
 
 $BASE/xenserver-core/macgen.py   
 
 #A dirty trick to hack the xenserver database
-#sed -c -i 's:### END INIT INFO:### END INIT INFO\n/bin/cp -f /var/lib/xcp/state.db.bak /var/lib/xcp/state.db\n/bin/cp -f /root/S05cgconfig.bak /etc/rc.d/rc3.d/S05cgconfig:' /etc/rc.d/rc3.d/S05cgconfig
-sed -c -i 's:### END INIT INFO:### END INIT INFO\n/bin/cp -f /var/lib/xcp/state.db.bak /var/lib/xcp/state.db\n/bin/cp -f /root/cgconfig.bak /etc/rc.d/init.d/cgconfig:' /etc/rc.d/init.d/cgconfig
+sed -c -i 's:### END INIT INFO:### END INIT INFO\n/bin/cp -f /var/lib/xcp/state.db.bak /var/lib/xcp/state.db\n/bin/cp -f /root/openvswitch.bak /etc/rc.d/init.d/openvswitch:' /etc/rc.d/init.d/openvswitch
 
 echo "Stage 2 finished. Waiting for 10 seconds before rebooting..."
 sleep 10
