@@ -103,7 +103,8 @@ sed -c -i "s/mtu 1400/mtu $guest_mtu/" tools/xen/build_xva.sh
 
 #cd tools/xen/
 #./install_os_domU.sh
-#cp -np plugins/* /usr/lib/xapi/plugins/
+cp -np $BASE/xenserver-core/plugins/* /usr/lib/xapi/plugins/
 set +x
-echo "Check default gateway, mtu and nameserver in xenrc and build_xva.sh. You may want to adjust the disk size of the VM. Then run cd $TEMP/devstack-stable-newton/tools/xen/; ./install_os_domU.sh"
+#echo "Check default gateway, mtu and nameserver in xenrc and build_xva.sh. You may want to adjust the disk size of the VM. Then run cd $TEMP/devstack-stable-newton/tools/xen/; ./install_os_domU.sh"
+echo "Check default gateway, mtu and nameserver in xenrc and build_xva.sh. You may want to adjust the disk size of the VM. Then run import_master.sh or import_compute.sh"
 echo "Stage 3 finished."

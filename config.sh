@@ -21,7 +21,7 @@ NFS_ROOT="/root/nfsroot"
 ######2. required for setting up xen-blanket######
 
 
-HOSTNAME=fractus-100
+HOSTNAME=amazon-100
 platform=xen    #xen/kvm/hyperv
 
 
@@ -32,18 +32,19 @@ staticip_dns=128.253.180.2
 staticip_gateway=192.168.139.1
 staticip_ip=192.168.139.41
 
-NAMESERVER=192.168.139.1
+NAMESERVER=172.31.0.2
 is_compute=false
 GUEST_NAME=$HOSTNAME
 GUEST_IPSUFFIX=$((IPSUFFIX+50))
 
+#Since we are using VM images now, the following parameters are fixed
 #root password of Domain-0
-host_passwd="<modify_me>"
+host_passwd="qzpm123098"
 
 #password of the openstack VM
-guest_passwd="<modify_me>"
+guest_passwd="qzpm123098"
 
 #password of the openstack services
-openstack_passwd="<modify_me>"
+openstack_passwd="qzpm123098"
 
 GIT_OPENSTACK="https://git.openstack.org/openstack-dev/devstack"
