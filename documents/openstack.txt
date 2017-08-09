@@ -27,7 +27,7 @@ the installation scripts in a screen or tmux session.
     
     Then, run setup_openstack.sh utile it finishes.
     
-    Follow the prompt of previous script and run "install_os_domU.sh". It will install openstack into a VM.
+    Follow the prompt of previous script and run import_master.sh or import_compute.sh. It will install openstack into a VM.
     
 3. Setup compute nodes:
     Similar steps as the master, but make sure that IPSUFFIX is unique.
