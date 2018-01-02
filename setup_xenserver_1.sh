@@ -170,7 +170,7 @@ fi
 
 
 sed -c -i 's/xen.gz/xen-4.2.2-blanket.gz/' /boot/grub/menu.lst
-sed -c -i "/xen-4.2.2-blanket.gz/ s/$/ tgt=0 dom0_mem=1G,max:1G cpuid_mask_ecx=0x80802001 cpuid_mask_edx=0x078bfbfd cpuid_mask_ext_ecx=0x00000001 cpuid_mask_ext_edx=0x2191abfd cpuid_mask_xsave_eax=0 smep=false/" /boot/grub/menu.lst
+sed -c -i "/xen-4.2.2-blanket.gz/ s/$/ tgt=0 dom0_mem=1G,max:1G cpuid_mask_ecx=0x80802001 cpuid_mask_edx=0x078bfbfd cpuid_mask_ext_ecx=0x00000001 cpuid_mask_ext_edx=0x2191abfd cpuid_mask_xsave_eax=0 xsave=false smep=false/" /boot/grub/menu.lst
 
 if [ "$platform" = xen ]; then
     sed -c -i 's/vmlinuz-3.6.11-2.el6.centos.alt.x86_64/vmlinuz-3.4.53-blanket/' /boot/grub/menu.lst

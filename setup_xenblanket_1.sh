@@ -67,6 +67,7 @@ if [ "$platform" = xen ]; then
     make -j4 all
     make modules_install install
     ln -s $TEMP/BUILD/kernel /usr/src/kernels/3.4.53-blanket
+    grubby --title="Xen-Blanket" --add-multiboot=/boot/xen-4.2.2-blanket.gz --mbargs="tgt=0 dom0_mem=1G,max:1G cpuid_mask_ecx=0x80802001 cpuid_mask_edx=0x078bfbfd cpuid_mask_ext_ecx=0x00000001 cpuid_mask_ext_edx=0x2191abfd cpuid_mask_xsave_eax=0 xsave=false smep=false" --add-kernel=/boot/vmlinuz-3.4.53-blanket --initrd=/boot/initramfs-3.4.53-blanket.img --copy-default --make-default
 elif [ "$platform" = kvm ]; then
     #yum install -y kernel-3.4.46-8.el6.centos.alt kernel-devel-3.4.46-8.el6.centos.alt
     mkdir kernel-3.4.46
@@ -83,6 +84,7 @@ elif [ "$platform" = kvm ]; then
     cd kvm_driver
     make
     make install
+    grubby --title="Xen-Blanket" --add-multiboot=/boot/xen-4.2.2-blanket.gz --mbargs="tgt=0 dom0_mem=1G,max:1G cpuid_mask_ecx=0x80802001 cpuid_mask_edx=0x078bfbfd cpuid_mask_ext_ecx=0x00000001 cpuid_mask_ext_edx=0x2191abfd cpuid_mask_xsave_eax=0 xsave=false smep=false" --add-kernel=/boot/vmlinuz-3.4.46-blanket --initrd=/boot/initramfs-3.4.46-blanket.img --copy-default --make-default
 elif [ "$platform" = hyperv ]; then
     mkdir kernel-3.4.46
     cd kernel-3.4.46
@@ -98,15 +100,11 @@ elif [ "$platform" = hyperv ]; then
     cd hyperv_driver
     make
     make install
+    grubby --title="Xen-Blanket" --add-multiboot=/boot/xen-4.2.2-blanket.gz --mbargs="tgt=0 dom0_mem=1G,max:1G cpuid_mask_ecx=0x80802001 cpuid_mask_edx=0x078bfbfd cpuid_mask_ext_ecx=0x00000001 cpuid_mask_ext_edx=0x2191abfd cpuid_mask_xsave_eax=0 xsave=false smep=false" --add-kernel=/boot/vmlinuz-3.4.46-blanket --initrd=/boot/initramfs-3.4.46-blanket.img --copy-default --make-default
 fi
 
 chkconfig xencommons on
 
 set +x
-echo "All completed. Edit grub to add xen-blanket. It should look like this:"
-echo "title xen-blanket"
-echo "	root (hd0,0)"
-echo "	kernel /xen-4.2.2-blanket.gz tgt=0 dom0_mem=1G,max:1G cpuid_mask_ecx=0x80802001 cpuid_mask_edx=0x078bfbfd cpuid_mask_ext_ecx=0x00000001 cpuid_mask_ext_edx=0x2191abfd cpuid_mask_xsave_eax=0 smep=false"
-echo "	module /vmlinuz-xxxxxxxxxx yyyyyyyyyyyyyyyyyyy console=hvc0 earlyprintk=xen"
-echo "	module /initramfs-xxxxxxxxxxxxxxxxx"
+echo "All completed. Check grub before reboot!"
 
